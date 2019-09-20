@@ -103,7 +103,27 @@ func getMapParam(m map[string]interface{}, prop string, required bool) (map[stri
 	case map[string]interface{}:
 		return v.(map[string]interface{}), true, nil
 	default:
-		return nil, true, fmt.Errorf("Parameter %s type %T wrong", prop, v)
+		return nil, true, fmt.Errorf("ParameterXXXXX %s type %T wrong", prop, v)
+	}
+}
+
+// Return a 'map[string]interface{}' value, whether the value was
+// found, and any error.  If 'required' is true and the property is
+// missing, return an error.  If the property's value is not a
+// 'map[string]interface{}', return an err.
+func getArrayParam(m map[string]interface{}, prop string, required bool) ([]interface{}, bool, error) {
+	v, have := m[prop]
+	if !have {
+		if required {
+			return nil, false, fmt.Errorf("Parameter %s missing", prop)
+		}
+		return nil, false, nil
+	}
+	switch v.(type) {
+	case []interface{}:
+		return v.([]interface{}), true, nil
+	default:
+		return nil, true, fmt.Errorf("ParameterXXXXX %s type %T wrong", prop, v)
 	}
 }
 
@@ -870,7 +890,7 @@ func (s *Service) ProcessRequest(ctx *core.Context, m map[string]interface{}, ou
 		}
 
 	case "/api/loc/facts/add": // Params: fact
-		fact, _, err := getMapParam(m, "fact", true)
+		fact, _, err := getArrayParam(m, "fact", true)
 		if err != nil {
 			return nil, err
 		}
@@ -885,20 +905,24 @@ func (s *Service) ProcessRequest(ctx *core.Context, m map[string]interface{}, ou
 		}
 
 		id, _, err := GetStringParam(m, "id", false)
-
+		flen := len(fact)
+		ids := make([]string, 0)
 		// ToDo: Not this.
-		js, err := json.Marshal(fact)
-		if err != nil {
-			return nil, err
+		for i := 0; i < flen; i++ {
+			id = ""
+			js, err := json.Marshal(fact[i])
+			if err != nil {
+				return nil, err
+			}
+			id, err = s.System.AddFact(ctx, location, id, string(js))
+			if err != nil {
+				return nil, err
+			}
+			ids = append(ids, id)
 		}
 
-		id, err = s.System.AddFact(ctx, location, id, string(js))
-		if err != nil {
-			return nil, err
-		}
-		m := map[string]interface{}{"id": id}
-
-		js, err = json.Marshal(&m)
+		m := map[string]interface{}{"id": ids}
+		js, err := json.Marshal(&m)
 		if err != nil {
 			return nil, err
 		}
