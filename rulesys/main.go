@@ -49,11 +49,11 @@ var verbosity = genericFlags.String("verbosity", "EVERYTHING", "Logging verbosit
 var engineFlags = flag.NewFlagSet("engine", flag.ExitOnError)
 var linearState = engineFlags.Bool("linear-state", false, "linear (or indexed) state?")
 var maxPending = engineFlags.Int("max-pending", 0, "max pending requests; 0 means no max")
-var maxLocations = engineFlags.Int("max-locations", 1000, "Max locations")
+var maxLocations = engineFlags.Int("max-locations", 5000, "Max locations")
 var maxFacts = engineFlags.Int("max-facts", 1000, "Max facts per location")
 var accVerbosity = engineFlags.String("acc-verbosity", "EVERYTHING", "Log accumulator verbosity.")
-var storageType = engineFlags.String("storage", "mem", "storage type")
-var storageConfig = engineFlags.String("storage-config", "", "type-specific storage config")
+var storageType = engineFlags.String("storage", "cassandra", "storage type")
+var storageConfig = engineFlags.String("storage-config", "127.0.0.1", "type-specific storage config")
 var bashActions = engineFlags.Bool("bash-actions", false, "enable Bash script actions")
 
 var enginePort = engineFlags.String("engine-port", ":8001", "port engine will serve")
@@ -327,7 +327,7 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
-	args := os.Args[1:]
+	args := []string{"engine"}
 	args = generic(args)
 	if len(args) == 0 {
 		fmt.Fprintf(os.Stderr, "Error: Need a subcommand (engine|storage)\n\n")
